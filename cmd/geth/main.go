@@ -129,6 +129,8 @@ var (
 		utils.NodeKeyHexFlag,
 		utils.DeveloperFlag,
 		utils.DeveloperPeriodFlag,
+		utils.PbftDeveloperFlag,
+		utils.PbftDeveloperPeriodFlag,
 		utils.TestnetFlag,
 		utils.RinkebyFlag,
 		utils.GoerliFlag,
@@ -381,7 +383,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	}
 
 	// Start auxiliary services if enabled
-	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) {
+	if ctx.GlobalBool(utils.MiningEnabledFlag.Name) || ctx.GlobalBool(utils.DeveloperFlag.Name) || ctx.GlobalBool(utils.PbftDeveloperFlag.Name) {
 		// Mining only makes sense if a full Ethereum node is running
 		if ctx.GlobalString(utils.SyncModeFlag.Name) == "light" {
 			utils.Fatalf("Light clients do not support mining")
@@ -401,9 +403,13 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 		if ctx.GlobalIsSet(utils.MinerThreadsFlag.Name) {
 			threads = ctx.GlobalInt(utils.MinerThreadsFlag.Name)
 		}
-		if err := ethereum.StartMining(threads); err != nil {
-			utils.Fatalf("Failed to start mining: %v", err)
-		}
+        if !ctx.GlobalBool(utils.PbftDeveloperFlag.Name) {
+            if err := ethereum.StartMining(threads); err != nil {
+                utils.Fatalf("Failed to start mining: %v", err)
+            }
+        } else {
+            ethereum.SetDefaultAuthority()
+        }
 	}
 }
 
